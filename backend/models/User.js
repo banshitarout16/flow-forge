@@ -23,11 +23,12 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Same email can exist across different organizations, but must be unique within one org
+
 userSchema.index({ organizationId: 1, email: 1 }, { unique: true });
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+
+  if (!this.isModified("password") || this._skipPasswordHash) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();

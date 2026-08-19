@@ -100,6 +100,12 @@ const Register = () => {
             Sign in
           </MLink>
         </Typography>
+        <Typography variant="body2" sx={{ mt: 1, textAlign: "center", color: colors.slate }}>
+          Joining an existing organization?{" "}
+          <MLink component={Link} to="/join" sx={{ color: colors.red, fontWeight: 600 }}>
+            Get started here
+          </MLink>
+        </Typography>
       </Paper>
     </Box>
   );

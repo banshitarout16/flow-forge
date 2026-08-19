@@ -3,8 +3,7 @@ import User from "../models/User.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateTokens.js";
 import { asyncHandler } from "../middlewares/errorHandler.middleware.js";
 
-// @desc  Register a brand-new organization + its first admin user
-// @route POST /api/auth/register-organization
+
 export const registerOrganization = asyncHandler(async (req, res) => {
   const { orgName, domainType, adminName, adminEmail, password } = req.body;
 
@@ -45,8 +44,7 @@ export const registerOrganization = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc  Login - user must supply their org slug + email + password
-// @route POST /api/auth/login
+
 export const login = asyncHandler(async (req, res) => {
   const { orgSlug, email, password } = req.body;
 
@@ -84,8 +82,7 @@ export const login = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc  Get currently logged-in user
-// @route GET /api/auth/me
+
 export const getMe = asyncHandler(async (req, res) => {
   res.json({ user: req.user.toSafeObject() });
 });

@@ -1,17 +1,12 @@
 import WorkItem from "../models/WorkItem.js";
 import { asyncHandler } from "../middlewares/errorHandler.middleware.js";
-
-// Generates a simple sequential code per org, e.g. FF-1001, FF-1002...
-const generateCode = async (organizationId) => {
-  const count = await WorkItem.countDocuments({ organizationId });
-  return `FF-${1000 + count + 1}`;
-};
+import { generateWorkItemCode } from "../utils/generateWorkItemCode.js";
 
 // @route POST /api/work-items
 export const createWorkItem = asyncHandler(async (req, res) => {
   const { title, description, category, priority, assignedTeam, assignedTo } = req.body;
 
-  const code = await generateCode(req.organizationId);
+  const code = await generateWorkItemCode(req.organizationId);
 
   const workItem = await WorkItem.create({
     organizationId: req.organizationId,
@@ -33,13 +28,13 @@ export const createWorkItem = asyncHandler(async (req, res) => {
     { path: "assignedTo", select: "name email" },
   ]);
 
-  // Real-time push to the org's room (Phase 3 wires the client side up fully)
+ 
   req.io?.to(req.organizationId.toString()).emit("workItem:created", populated);
 
   res.status(201).json(populated);
 });
 
-// @route GET /api/work-items  (supports ?status=&priority=&assignedTo=&search=)
+
 export const getWorkItems = asyncHandler(async (req, res) => {
   const { status, priority, assignedTo, assignedTeam, search } = req.query;
 
@@ -50,7 +45,7 @@ export const getWorkItems = asyncHandler(async (req, res) => {
   if (assignedTeam) filter.assignedTeam = assignedTeam;
   if (search) filter.title = { $regex: search, $options: "i" };
 
-  // Requesters only see their own items; agents/managers/admins see everything in the org
+
   if (req.user.role === "requester") {
     filter.createdBy = req.user._id;
   }
@@ -64,7 +59,7 @@ export const getWorkItems = asyncHandler(async (req, res) => {
   res.json(workItems);
 });
 
-// @route GET /api/work-items/:id
+
 export const getWorkItemById = asyncHandler(async (req, res) => {
   const workItem = await WorkItem.findOne({ _id: req.params.id, organizationId: req.organizationId })
     .populate("createdBy", "name email")
@@ -86,7 +81,7 @@ export const getWorkItemById = asyncHandler(async (req, res) => {
   res.json(workItem);
 });
 
-// @route PATCH /api/work-items/:id/status
+
 export const updateStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
   const workItem = await WorkItem.findOne({ _id: req.params.id, organizationId: req.organizationId });
@@ -109,7 +104,7 @@ export const updateStatus = asyncHandler(async (req, res) => {
   res.json(workItem);
 });
 
-// @route PATCH /api/work-items/:id/assign
+
 export const assignWorkItem = asyncHandler(async (req, res) => {
   const { assignedTeam, assignedTo } = req.body;
   const workItem = await WorkItem.findOne({ _id: req.params.id, organizationId: req.organizationId });
@@ -130,7 +125,7 @@ export const assignWorkItem = asyncHandler(async (req, res) => {
   res.json(workItem);
 });
 
-// @route POST /api/work-items/:id/comments
+
 export const addComment = asyncHandler(async (req, res) => {
   const { text, isInternal } = req.body;
   const workItem = await WorkItem.findOne({ _id: req.params.id, organizationId: req.organizationId });

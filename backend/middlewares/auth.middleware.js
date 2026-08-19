@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { asyncHandler } from "./errorHandler.middleware.js";
 
-// Verifies the JWT and attaches req.user (with organizationId) to every request
+
 export const protect = asyncHandler(async (req, res, next) => {
   let token;
   const authHeader = req.headers.authorization;
@@ -25,7 +25,7 @@ export const protect = asyncHandler(async (req, res, next) => {
       throw new Error("Not authorized, user not found or inactive");
     }
 
-    req.user = user; // includes organizationId, role, teamId
+    req.user = user; 
     next();
   } catch (err) {
     res.status(401);

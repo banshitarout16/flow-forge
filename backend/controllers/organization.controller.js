@@ -11,7 +11,7 @@ export const getMyOrganization = asyncHandler(async (req, res) => {
   res.json(organization);
 });
 
-// Very simple Phase-1 dashboard summary. Analytics (Phase 4) will expand this a lot.
+
 export const getDashboardSummary = asyncHandler(async (req, res) => {
   const filter = { organizationId: req.organizationId };
 

@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const activityLogSchema = new mongoose.Schema(
   {
-    action: { type: String, required: true }, // e.g. "Created", "Assigned to Maintenance", "Status changed to Resolved"
+    action: { type: String, required: true },
     performedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     timestamp: { type: Date, default: Date.now },
   },
@@ -27,7 +27,7 @@ const workItemSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    code: { type: String, required: true }, // e.g. FF-10294, generated per org
+    code: { type: String, required: true }, 
     title: { type: String, required: true, trim: true },
     description: { type: String, default: "" },
     category: { type: String, default: "General" },
@@ -38,7 +38,7 @@ const workItemSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      default: "New", // Phase 2 will make this driven by a configurable Workflow
+      default: "New", 
     },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     assignedTeam: { type: mongoose.Schema.Types.ObjectId, ref: "Team", default: null },

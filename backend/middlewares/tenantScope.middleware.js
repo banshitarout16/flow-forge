@@ -1,6 +1,3 @@
-// This is the core of multi-tenant isolation.
-// It never trusts organizationId from the request body/query -
-// it always derives it from the authenticated user's token.
 export const tenantScope = (req, res, next) => {
   if (!req.user || !req.user.organizationId) {
     res.status(401);

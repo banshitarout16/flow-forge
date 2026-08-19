@@ -44,6 +44,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Public complaint form creates the account + first work item in one step,
+  // then logs the requester straight in - no separate login round-trip needed.
+  const raiseComplaint = async (payload) => {
+    setLoading(true);
+    try {
+      const { data } = await api.post("/public/raise-complaint", payload);
+      persistSession(data);
+      return data;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem("flowforge_access_token");
     localStorage.removeItem("flowforge_user");
@@ -53,7 +66,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, organization, loading, login, registerOrganization, logout }}>
+    <AuthContext.Provider value={{ user, organization, loading, login, registerOrganization, raiseComplaint, logout }}>
       {children}
     </AuthContext.Provider>
   );

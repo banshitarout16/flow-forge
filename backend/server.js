@@ -13,6 +13,8 @@ import organizationRoutes from "./routes/organization.routes.js";
 import teamRoutes from "./routes/team.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import workItemRoutes from "./routes/workItem.routes.js";
+import joinRequestRoutes from "./routes/joinRequest.routes.js";
+import publicRoutes from "./routes/public.routes.js";
 
 dotenv.config();
 connectDB();
@@ -25,7 +27,7 @@ const io = new Server(server, {
 });
 registerSocketHandlers(io);
 
-// Makes req.io available inside every controller (used to emit real-time events)
+
 app.use((req, res, next) => {
   req.io = io;
   next();
@@ -41,6 +43,8 @@ app.use("/api/organizations", organizationRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/work-items", workItemRoutes);
+app.use("/api/join-requests", joinRequestRoutes);
+app.use("/api/public", publicRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

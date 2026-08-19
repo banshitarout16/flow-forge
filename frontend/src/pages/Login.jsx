@@ -91,6 +91,12 @@ const Login = () => {
             Create one
           </MLink>
         </Typography>
+        <Typography variant="body2" sx={{ mt: 1, textAlign: "center", color: colors.slate }}>
+          Applying as staff, or raising a request?{" "}
+          <MLink component={Link} to="/join" sx={{ color: colors.red, fontWeight: 600 }}>
+            Get started here
+          </MLink>
+        </Typography>
       </Paper>
     </Box>
   );

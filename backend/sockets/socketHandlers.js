@@ -1,5 +1,4 @@
-// Each connected client joins a room named after their organizationId,
-// so real-time events never leak across tenants.
+
 export const registerSocketHandlers = (io) => {
   io.on("connection", (socket) => {
     console.log(`Socket connected: ${socket.id}`);

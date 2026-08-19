@@ -4,20 +4,27 @@ import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import AssignmentRoundedIcon from "@mui/icons-material/AssignmentRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
 import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
+import HowToRegRoundedIcon from "@mui/icons-material/HowToRegRounded";
 import { colors } from "../theme/theme";
+import { useAuth } from "../context/AuthContext";
 
 const drawerWidth = 240;
 
-const navItems = [
+const baseNavItems = [
   { label: "Dashboard", path: "/dashboard", icon: <DashboardRoundedIcon /> },
   { label: "Work Items", path: "/work-items", icon: <AssignmentRoundedIcon /> },
   { label: "Teams", path: "/teams", icon: <GroupsRoundedIcon /> },
   { label: "Users", path: "/users", icon: <PeopleAltRoundedIcon /> },
 ];
 
+const adminOnlyItem = { label: "Applications", path: "/applications", icon: <HowToRegRoundedIcon /> };
+
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+
+  const navItems = user?.role === "org_admin" ? [...baseNavItems, adminOnlyItem] : baseNavItems;
 
   return (
     <Drawer
