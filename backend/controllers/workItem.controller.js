@@ -1,15 +1,38 @@
 import WorkItem from "../models/WorkItem.js";
+import Workflow from "../models/Workflow.js";
 import { asyncHandler } from "../middlewares/errorHandler.middleware.js";
 import { generateWorkItemCode } from "../utils/generateWorkItemCode.js";
+import { uploadBufferToCloudinary } from "../utils/uploadToCloudinary.js";
 
-// @route POST /api/work-items
+const resolveWorkflow = async (organizationId, workflowId) => {
+  if (workflowId) {
+    const workflow = await Workflow.findOne({ _id: workflowId, organizationId });
+    if (!workflow) {
+      const err = new Error("Workflow not found");
+      err.statusCode = 404;
+      throw err;
+    }
+    return workflow;
+  }
+  const defaultWorkflow = await Workflow.findOne({ organizationId, isDefault: true });
+  if (!defaultWorkflow) {
+    const err = new Error("No default workflow configured for this organization");
+    err.statusCode = 400;
+    throw err;
+  }
+  return defaultWorkflow;
+};
+
 export const createWorkItem = asyncHandler(async (req, res) => {
-  const { title, description, category, priority, assignedTeam, assignedTo } = req.body;
+  const { title, description, category, priority, assignedTeam, assignedTo, workflowId } = req.body;
 
+  const workflow = await resolveWorkflow(req.organizationId, workflowId);
+  const initialState = workflow.states.find((s) => s.isInitial) || workflow.states[0];
   const code = await generateWorkItemCode(req.organizationId);
 
   const workItem = await WorkItem.create({
     organizationId: req.organizationId,
+    workflowId: workflow._id,
     code,
     title,
     description,
@@ -18,7 +41,7 @@ export const createWorkItem = asyncHandler(async (req, res) => {
     assignedTeam: assignedTeam || null,
     assignedTo: assignedTo || null,
     createdBy: req.user._id,
-    status: "New",
+    status: initialState.label,
     activityLog: [{ action: "Created", performedBy: req.user._id }],
   });
 
@@ -26,14 +49,13 @@ export const createWorkItem = asyncHandler(async (req, res) => {
     { path: "createdBy", select: "name email" },
     { path: "assignedTeam", select: "name" },
     { path: "assignedTo", select: "name email" },
+    { path: "workflowId", select: "name states" },
   ]);
 
- 
   req.io?.to(req.organizationId.toString()).emit("workItem:created", populated);
 
   res.status(201).json(populated);
 });
-
 
 export const getWorkItems = asyncHandler(async (req, res) => {
   const { status, priority, assignedTo, assignedTeam, search } = req.query;
@@ -45,7 +67,6 @@ export const getWorkItems = asyncHandler(async (req, res) => {
   if (assignedTeam) filter.assignedTeam = assignedTeam;
   if (search) filter.title = { $regex: search, $options: "i" };
 
-
   if (req.user.role === "requester") {
     filter.createdBy = req.user._id;
   }
@@ -54,19 +75,21 @@ export const getWorkItems = asyncHandler(async (req, res) => {
     .populate("createdBy", "name email")
     .populate("assignedTeam", "name")
     .populate("assignedTo", "name email")
+    .populate("workflowId", "name states")
     .sort({ createdAt: -1 });
 
   res.json(workItems);
 });
-
 
 export const getWorkItemById = asyncHandler(async (req, res) => {
   const workItem = await WorkItem.findOne({ _id: req.params.id, organizationId: req.organizationId })
     .populate("createdBy", "name email")
     .populate("assignedTeam", "name")
     .populate("assignedTo", "name email")
+    .populate("workflowId", "name states")
     .populate("comments.author", "name email")
-    .populate("activityLog.performedBy", "name email");
+    .populate("activityLog.performedBy", "name email")
+    .populate("attachments.uploadedBy", "name email");
 
   if (!workItem) {
     res.status(404);
@@ -81,18 +104,30 @@ export const getWorkItemById = asyncHandler(async (req, res) => {
   res.json(workItem);
 });
 
-
 export const updateStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
-  const workItem = await WorkItem.findOne({ _id: req.params.id, organizationId: req.organizationId });
 
+  const workItem = await WorkItem.findOne({ _id: req.params.id, organizationId: req.organizationId });
   if (!workItem) {
     res.status(404);
     throw new Error("Work item not found");
   }
 
-  const wasResolved = ["Resolved", "Closed"].includes(workItem.status);
-  const isReopening = wasResolved && !["Resolved", "Closed"].includes(status);
+  const workflow = await Workflow.findOne({ _id: workItem.workflowId, organizationId: req.organizationId });
+  if (!workflow) {
+    res.status(404);
+    throw new Error("Workflow for this work item not found");
+  }
+
+  const targetState = workflow.states.find((s) => s.label === status);
+  if (!targetState) {
+    res.status(400);
+    throw new Error(`"${status}" is not a valid status for this work item's workflow`);
+  }
+
+  const currentState = workflow.states.find((s) => s.label === workItem.status);
+  const wasFinal = currentState?.isFinal;
+  const isReopening = wasFinal && !targetState.isFinal;
   if (isReopening) workItem.reopenCount += 1;
 
   workItem.status = status;
@@ -103,7 +138,6 @@ export const updateStatus = asyncHandler(async (req, res) => {
 
   res.json(workItem);
 });
-
 
 export const assignWorkItem = asyncHandler(async (req, res) => {
   const { assignedTeam, assignedTo } = req.body;
@@ -125,7 +159,6 @@ export const assignWorkItem = asyncHandler(async (req, res) => {
   res.json(workItem);
 });
 
-
 export const addComment = asyncHandler(async (req, res) => {
   const { text, isInternal } = req.body;
   const workItem = await WorkItem.findOne({ _id: req.params.id, organizationId: req.organizationId });
@@ -140,6 +173,34 @@ export const addComment = asyncHandler(async (req, res) => {
   await workItem.save();
 
   req.io?.to(req.organizationId.toString()).emit("workItem:commented", { id: workItem._id });
+
+  res.status(201).json(workItem);
+});
+
+export const uploadAttachment = asyncHandler(async (req, res) => {
+  const workItem = await WorkItem.findOne({ _id: req.params.id, organizationId: req.organizationId });
+  if (!workItem) {
+    res.status(404);
+    throw new Error("Work item not found");
+  }
+
+  if (!req.file) {
+    res.status(400);
+    throw new Error("No file uploaded");
+  }
+
+  const result = await uploadBufferToCloudinary(req.file.buffer, `flowforge/${req.organizationId}`);
+
+  workItem.attachments.push({
+    url: result.secure_url,
+    publicId: result.public_id,
+    filename: req.file.originalname,
+    uploadedBy: req.user._id,
+  });
+  workItem.activityLog.push({ action: `Attachment added: ${req.file.originalname}`, performedBy: req.user._id });
+  await workItem.save();
+
+  req.io?.to(req.organizationId.toString()).emit("workItem:attachmentAdded", { id: workItem._id });
 
   res.status(201).json(workItem);
 });

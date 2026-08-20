@@ -23,18 +23,26 @@ const statusColor = {
   Closed: { bg: "#F1F1F1", fg: colors.slate },
 };
 
-const emptyForm = { title: "", description: "", category: "General", priority: "Medium" };
+const emptyForm = { title: "", description: "", category: "General", priority: "Medium", workflowId: "" };
 
 const WorkItems = () => {
   const [items, setItems] = useState([]);
+  const [workflows, setWorkflows] = useState([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const navigate = useNavigate();
 
   const load = () => api.get("/work-items").then(({ data }) => setItems(data));
+  const loadWorkflows = () =>
+    api.get("/workflows").then(({ data }) => {
+      setWorkflows(data);
+      const defaultWf = data.find((w) => w.isDefault);
+      if (defaultWf) setForm((f) => ({ ...f, workflowId: defaultWf._id }));
+    });
 
   useEffect(() => {
     load();
+    loadWorkflows();
   }, []);
 
   const handleCreate = async (e) => {
@@ -143,6 +151,20 @@ const WorkItems = () => {
               {["Low", "Medium", "High", "Critical"].map((p) => (
                 <MenuItem key={p} value={p}>
                   {p}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              label="Workflow"
+              value={form.workflowId}
+              onChange={(e) => setForm({ ...form, workflowId: e.target.value })}
+              fullWidth
+              helperText="Determines what status chain this item follows"
+            >
+              {workflows.map((w) => (
+                <MenuItem key={w._id} value={w._id}>
+                  {w.name}{w.isDefault ? " (default)" : ""}
                 </MenuItem>
               ))}
             </TextField>

@@ -1,10 +1,10 @@
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 import WorkItem from "../models/WorkItem.js";
+import Workflow from "../models/Workflow.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateTokens.js";
 import { generateWorkItemCode } from "../utils/generateWorkItemCode.js";
 import { asyncHandler } from "../middlewares/errorHandler.middleware.js";
-
 
 export const raiseComplaint = asyncHandler(async (req, res) => {
   const { orgSlug, name, email, password, title, description, category, priority } = req.body;
@@ -20,11 +20,16 @@ export const raiseComplaint = asyncHandler(async (req, res) => {
     throw new Error("Organization not found. Check the organization link you were given.");
   }
 
+  const defaultWorkflow = await Workflow.findOne({ organizationId: organization._id, isDefault: true });
+  if (!defaultWorkflow) {
+    res.status(400);
+    throw new Error("This organization hasn't configured a workflow yet");
+  }
+
   const normalizedEmail = email.toLowerCase().trim();
   let user = await User.findOne({ organizationId: organization._id, email: normalizedEmail });
 
   if (user) {
- 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       res.status(401);
@@ -42,17 +47,19 @@ export const raiseComplaint = asyncHandler(async (req, res) => {
     });
   }
 
+  const initialState = defaultWorkflow.states.find((s) => s.isInitial) || defaultWorkflow.states[0];
   const code = await generateWorkItemCode(organization._id);
 
   const workItem = await WorkItem.create({
     organizationId: organization._id,
+    workflowId: defaultWorkflow._id,
     code,
     title,
     description,
     category: category || "General",
     priority: priority || "Medium",
     createdBy: user._id,
-    status: "New",
+    status: initialState.label,
     activityLog: [{ action: "Created via public request form", performedBy: user._id }],
   });
 

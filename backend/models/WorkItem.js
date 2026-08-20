@@ -13,8 +13,19 @@ const commentSchema = new mongoose.Schema(
   {
     text: { type: String, required: true },
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    isInternal: { type: Boolean, default: false }, // internal note vs requester-visible
+    isInternal: { type: Boolean, default: false }, 
     createdAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
+const attachmentSchema = new mongoose.Schema(
+  {
+    url: { type: String, required: true },
+    publicId: { type: String, required: true }, 
+    filename: { type: String, default: "" },
+    uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    uploadedAt: { type: Date, default: Date.now },
   },
   { _id: false }
 );
@@ -27,7 +38,12 @@ const workItemSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    code: { type: String, required: true }, 
+    workflowId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Workflow",
+      required: true,
+    },
+    code: { type: String, required: true },
     title: { type: String, required: true, trim: true },
     description: { type: String, default: "" },
     category: { type: String, default: "General" },
@@ -38,7 +54,7 @@ const workItemSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      default: "New", 
+      required: true, 
     },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     assignedTeam: { type: mongoose.Schema.Types.ObjectId, ref: "Team", default: null },
@@ -46,6 +62,7 @@ const workItemSchema = new mongoose.Schema(
     reopenCount: { type: Number, default: 0 },
     activityLog: [activityLogSchema],
     comments: [commentSchema],
+    attachments: [attachmentSchema],
   },
   { timestamps: true }
 );

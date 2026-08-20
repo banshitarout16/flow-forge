@@ -6,7 +6,7 @@ import { roleCheck } from "../middlewares/roleCheck.middleware.js";
 
 const router = express.Router();
 
-router.post("/apply", applyForRole); // public - no auth
+router.post("/apply", applyForRole); 
 
 router.get("/", protect, tenantScope, roleCheck("org_admin"), getJoinRequests);
 router.patch("/:id/review", protect, tenantScope, roleCheck("org_admin"), reviewJoinRequest);

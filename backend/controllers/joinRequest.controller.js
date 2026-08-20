@@ -59,7 +59,8 @@ export const applyForRole = asyncHandler(async (req, res) => {
   });
 });
 
-
+// @desc  List applications for the org (org_admin only). Defaults to pending.
+// @route GET /api/join-requests
 export const getJoinRequests = asyncHandler(async (req, res) => {
   const { status } = req.query;
   const filter = { organizationId: req.organizationId, status: status || "pending" };
@@ -67,9 +68,11 @@ export const getJoinRequests = asyncHandler(async (req, res) => {
   res.json(requests);
 });
 
-
+// @desc  Approve or reject an application (org_admin only). Approval creates the
+//        real User account using the password the applicant already set.
+// @route PATCH /api/join-requests/:id/review
 export const reviewJoinRequest = asyncHandler(async (req, res) => {
-  const { action, reviewNote } = req.body; 
+  const { action, reviewNote } = req.body; // action: "approve" | "reject"
 
   const joinRequest = await JoinRequest.findOne({ _id: req.params.id, organizationId: req.organizationId });
   if (!joinRequest) {
@@ -87,7 +90,7 @@ export const reviewJoinRequest = asyncHandler(async (req, res) => {
       organizationId: joinRequest.organizationId,
       name: joinRequest.name,
       email: joinRequest.email,
-      password: joinRequest.password, 
+      password: joinRequest.password, // already hashed at application time
       role: joinRequest.requestedRole,
     });
     user._skipPasswordHash = true;

@@ -1,7 +1,7 @@
 import User from "../models/User.js";
 import { asyncHandler } from "../middlewares/errorHandler.middleware.js";
 
-// Org admin/manager invites a new user directly
+
 export const createUser = asyncHandler(async (req, res) => {
   const { name, email, password, role, teamId } = req.body;
 

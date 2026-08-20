@@ -1,8 +1,15 @@
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
+import Workflow from "../models/Workflow.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateTokens.js";
 import { asyncHandler } from "../middlewares/errorHandler.middleware.js";
 
+const defaultWorkflowStates = [
+  { label: "New", order: 1, isInitial: true, isFinal: false },
+  { label: "In Progress", order: 2, isInitial: false, isFinal: false },
+  { label: "Resolved", order: 3, isInitial: false, isFinal: true },
+  { label: "Closed", order: 4, isInitial: false, isFinal: true },
+];
 
 export const registerOrganization = asyncHandler(async (req, res) => {
   const { orgName, domainType, adminName, adminEmail, password } = req.body;
@@ -12,7 +19,7 @@ export const registerOrganization = asyncHandler(async (req, res) => {
     throw new Error("orgName, adminName, adminEmail and password are required");
   }
 
-  const slug = orgName.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  const slug = orgName.toLowerCase().trim().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "");
 
   const existingOrg = await Organization.findOne({ slug });
   if (existingOrg) {
@@ -33,6 +40,14 @@ export const registerOrganization = asyncHandler(async (req, res) => {
   organization.createdBy = adminUser._id;
   await organization.save();
 
+  await Workflow.create({
+    organizationId: organization._id,
+    name: "Default Workflow",
+    workItemType: "General",
+    states: defaultWorkflowStates,
+    isDefault: true,
+  });
+
   const accessToken = generateAccessToken(adminUser);
   const refreshToken = generateRefreshToken(adminUser);
 
@@ -43,7 +58,6 @@ export const registerOrganization = asyncHandler(async (req, res) => {
     refreshToken,
   });
 });
-
 
 export const login = asyncHandler(async (req, res) => {
   const { orgSlug, email, password } = req.body;
@@ -81,7 +95,6 @@ export const login = asyncHandler(async (req, res) => {
     refreshToken,
   });
 });
-
 
 export const getMe = asyncHandler(async (req, res) => {
   res.json({ user: req.user.toSafeObject() });

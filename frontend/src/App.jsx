@@ -7,6 +7,7 @@ import Join from "./pages/Join";
 import Apply from "./pages/Apply";
 import RaiseRequest from "./pages/RaiseRequest";
 import Applications from "./pages/Applications";
+import Workflows from "./pages/Workflows";
 import Dashboard from "./pages/Dashboard";
 import WorkItems from "./pages/WorkItems";
 import WorkItemDetail from "./pages/WorkItemDetail";
@@ -30,6 +31,7 @@ function App() {
           <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
           <Route path="/applications" element={<ProtectedRoute><Applications /></ProtectedRoute>} />
+          <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
