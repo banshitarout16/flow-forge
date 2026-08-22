@@ -1,4 +1,3 @@
-// Central error handler - keeps controllers thin, no try/catch clutter
 export const notFound = (req, res, next) => {
   res.status(404).json({ message: `Route not found: ${req.originalUrl}` });
 };
