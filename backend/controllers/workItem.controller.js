@@ -3,6 +3,8 @@ import Workflow from "../models/Workflow.js";
 import { asyncHandler } from "../middlewares/errorHandler.middleware.js";
 import { generateWorkItemCode } from "../utils/generateWorkItemCode.js";
 import { uploadBufferToCloudinary } from "../utils/uploadToCloudinary.js";
+import { computeSLADeadline } from "../services/slaEngine.service.js";
+import { maybeAddFeedbackRequest } from "../services/automationEngine.service.js";
 
 const resolveWorkflow = async (organizationId, workflowId) => {
   if (workflowId) {
@@ -29,6 +31,9 @@ export const createWorkItem = asyncHandler(async (req, res) => {
   const workflow = await resolveWorkflow(req.organizationId, workflowId);
   const initialState = workflow.states.find((s) => s.isInitial) || workflow.states[0];
   const code = await generateWorkItemCode(req.organizationId);
+  const finalPriority = priority || "Medium";
+  const createdAt = new Date();
+  const slaDeadline = await computeSLADeadline(req.organizationId, finalPriority, createdAt);
 
   const workItem = await WorkItem.create({
     organizationId: req.organizationId,
@@ -37,11 +42,13 @@ export const createWorkItem = asyncHandler(async (req, res) => {
     title,
     description,
     category,
-    priority,
+    priority: finalPriority,
     assignedTeam: assignedTeam || null,
     assignedTo: assignedTo || null,
     createdBy: req.user._id,
     status: initialState.label,
+    slaDeadline,
+    slaStatus: slaDeadline ? "on_track" : "not_tracked",
     activityLog: [{ action: "Created", performedBy: req.user._id }],
   });
 
@@ -132,6 +139,23 @@ export const updateStatus = asyncHandler(async (req, res) => {
 
   workItem.status = status;
   workItem.activityLog.push({ action: `Status changed to ${status}`, performedBy: req.user._id });
+
+  const now = new Date();
+  if (targetState.isFinal) {
+    if (!workItem.resolvedAt) {
+      workItem.resolvedAt = now;
+      if (workItem.slaDeadline && workItem.slaStatus !== "breached") {
+        workItem.slaStatus = now <= workItem.slaDeadline ? "on_track" : "breached";
+      }
+      await maybeAddFeedbackRequest(workItem);
+    }
+  } else if (isReopening) {
+    workItem.resolvedAt = null;
+    if (workItem.slaDeadline) {
+      workItem.slaStatus = now > workItem.slaDeadline ? "breached" : "on_track";
+    }
+  }
+
   await workItem.save();
 
   req.io?.to(req.organizationId.toString()).emit("workItem:statusChanged", { id: workItem._id, status });

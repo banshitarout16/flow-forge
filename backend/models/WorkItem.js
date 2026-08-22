@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const activityLogSchema = new mongoose.Schema(
   {
-    action: { type: String, required: true },
+    action: { type: String, required: true }, 
     performedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     timestamp: { type: Date, default: Date.now },
   },
@@ -54,8 +54,16 @@ const workItemSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      required: true, 
+      required: true,
     },
+    slaDeadline: { type: Date, default: null },
+    slaStatus: {
+      type: String,
+      enum: ["not_tracked", "on_track", "at_risk", "breached"],
+      default: "not_tracked",
+    },
+    escalated: { type: Boolean, default: false },
+    resolvedAt: { type: Date, default: null },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     assignedTeam: { type: mongoose.Schema.Types.ObjectId, ref: "Team", default: null },
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },

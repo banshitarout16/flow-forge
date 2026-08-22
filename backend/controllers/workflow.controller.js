@@ -2,7 +2,7 @@ import Workflow from "../models/Workflow.js";
 import WorkItem from "../models/WorkItem.js";
 import { asyncHandler } from "../middlewares/errorHandler.middleware.js";
 
-// @route POST /api/workflows  (org_admin only)
+
 export const createWorkflow = asyncHandler(async (req, res) => {
   const { name, workItemType, states, isDefault } = req.body;
 
@@ -20,7 +20,7 @@ export const createWorkflow = asyncHandler(async (req, res) => {
     throw new Error("At least one state must be marked as a final state");
   }
 
-  // Only one default workflow per org - unset any existing default if this one claims it
+
   if (isDefault) {
     await Workflow.updateMany({ organizationId: req.organizationId }, { isDefault: false });
   }
@@ -36,7 +36,7 @@ export const createWorkflow = asyncHandler(async (req, res) => {
   res.status(201).json(workflow);
 });
 
-// @route GET /api/workflows
+
 export const getWorkflows = asyncHandler(async (req, res) => {
   const workflows = await Workflow.find({ organizationId: req.organizationId }).sort({ createdAt: -1 });
   res.json(workflows);
@@ -51,7 +51,7 @@ export const getWorkflowById = asyncHandler(async (req, res) => {
   res.json(workflow);
 });
 
-// @route PATCH /api/workflows/:id  (org_admin only)
+
 export const updateWorkflow = asyncHandler(async (req, res) => {
   const { name, workItemType, states, isDefault } = req.body;
 
@@ -88,7 +88,7 @@ export const updateWorkflow = asyncHandler(async (req, res) => {
   res.json(workflow);
 });
 
-// @route DELETE /api/workflows/:id  (org_admin only)
+
 export const deleteWorkflow = asyncHandler(async (req, res) => {
   const workflow = await Workflow.findOne({ _id: req.params.id, organizationId: req.organizationId });
   if (!workflow) {

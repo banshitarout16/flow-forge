@@ -72,7 +72,7 @@ export const getJoinRequests = asyncHandler(async (req, res) => {
 //        real User account using the password the applicant already set.
 // @route PATCH /api/join-requests/:id/review
 export const reviewJoinRequest = asyncHandler(async (req, res) => {
-  const { action, reviewNote } = req.body; // action: "approve" | "reject"
+  const { action, reviewNote } = req.body; 
 
   const joinRequest = await JoinRequest.findOne({ _id: req.params.id, organizationId: req.organizationId });
   if (!joinRequest) {
@@ -90,7 +90,7 @@ export const reviewJoinRequest = asyncHandler(async (req, res) => {
       organizationId: joinRequest.organizationId,
       name: joinRequest.name,
       email: joinRequest.email,
-      password: joinRequest.password, // already hashed at application time
+      password: joinRequest.password, 
       role: joinRequest.requestedRole,
     });
     user._skipPasswordHash = true;

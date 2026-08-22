@@ -1,6 +1,9 @@
+import jwt from "jsonwebtoken";
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 import Workflow from "../models/Workflow.js";
+import SLAPolicy from "../models/SLAPolicy.js";
+import AutomationRule from "../models/AutomationRule.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateTokens.js";
 import { asyncHandler } from "../middlewares/errorHandler.middleware.js";
 
@@ -10,6 +13,8 @@ const defaultWorkflowStates = [
   { label: "Resolved", order: 3, isInitial: false, isFinal: true },
   { label: "Closed", order: 4, isInitial: false, isFinal: true },
 ];
+
+const defaultSLAHours = { Critical: 2, High: 6, Medium: 24, Low: 72 };
 
 export const registerOrganization = asyncHandler(async (req, res) => {
   const { orgName, domainType, adminName, adminEmail, password } = req.body;
@@ -47,6 +52,20 @@ export const registerOrganization = asyncHandler(async (req, res) => {
     states: defaultWorkflowStates,
     isDefault: true,
   });
+
+  await SLAPolicy.insertMany(
+    Object.entries(defaultSLAHours).map(([priority, hours]) => ({
+      organizationId: organization._id,
+      priority,
+      hours,
+    }))
+  );
+
+  await AutomationRule.insertMany([
+    { organizationId: organization._id, type: "critical_unassigned_escalation", isActive: true, thresholdMinutes: 30 },
+    { organizationId: organization._id, type: "sla_at_risk_notify", isActive: true, slaRemainingPercent: 20 },
+    { organizationId: organization._id, type: "resolved_feedback_request", isActive: true },
+  ]);
 
   const accessToken = generateAccessToken(adminUser);
   const refreshToken = generateRefreshToken(adminUser);
@@ -98,4 +117,32 @@ export const login = asyncHandler(async (req, res) => {
 
 export const getMe = asyncHandler(async (req, res) => {
   res.json({ user: req.user.toSafeObject() });
+});
+
+export const refreshAccessToken = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    res.status(401);
+    throw new Error("Refresh token required");
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+  } catch (err) {
+    res.status(401);
+    throw new Error("Refresh token invalid or expired, please log in again");
+  }
+
+  const user = await User.findById(decoded.id);
+  if (!user || !user.isActive) {
+    res.status(401);
+    throw new Error("Refresh token invalid or expired, please log in again");
+  }
+
+  const accessToken = generateAccessToken(user);
+  const newRefreshToken = generateRefreshToken(user);
+
+  res.json({ accessToken, refreshToken: newRefreshToken });
 });

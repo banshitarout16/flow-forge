@@ -15,7 +15,7 @@ const joinRequestSchema = new mongoose.Schema(
     },
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, lowercase: true, trim: true },
-    password: { type: String, required: true, minlength: 6 },
+    password: { type: String, required: true, minlength: [6, "Password must be at least 6 characters"] },
     requestedRole: { type: String, enum: ["agent", "manager"], required: true },
     department: { type: String, default: "" },
     experience: { type: String, default: "" }, // skills / past experience / why they're applying

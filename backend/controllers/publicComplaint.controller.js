@@ -4,6 +4,7 @@ import WorkItem from "../models/WorkItem.js";
 import Workflow from "../models/Workflow.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateTokens.js";
 import { generateWorkItemCode } from "../utils/generateWorkItemCode.js";
+import { computeSLADeadline } from "../services/slaEngine.service.js";
 import { asyncHandler } from "../middlewares/errorHandler.middleware.js";
 
 export const raiseComplaint = asyncHandler(async (req, res) => {
@@ -49,6 +50,9 @@ export const raiseComplaint = asyncHandler(async (req, res) => {
 
   const initialState = defaultWorkflow.states.find((s) => s.isInitial) || defaultWorkflow.states[0];
   const code = await generateWorkItemCode(organization._id);
+  const finalPriority = priority || "Medium";
+  const createdAt = new Date();
+  const slaDeadline = await computeSLADeadline(organization._id, finalPriority, createdAt);
 
   const workItem = await WorkItem.create({
     organizationId: organization._id,
@@ -57,9 +61,11 @@ export const raiseComplaint = asyncHandler(async (req, res) => {
     title,
     description,
     category: category || "General",
-    priority: priority || "Medium",
+    priority: finalPriority,
     createdBy: user._id,
     status: initialState.label,
+    slaDeadline,
+    slaStatus: slaDeadline ? "on_track" : "not_tracked",
     activityLog: [{ action: "Created via public request form", performedBy: user._id }],
   });
 

@@ -16,6 +16,9 @@ import workItemRoutes from "./routes/workItem.routes.js";
 import workflowRoutes from "./routes/workflow.routes.js";
 import joinRequestRoutes from "./routes/joinRequest.routes.js";
 import publicRoutes from "./routes/public.routes.js";
+import slaPolicyRoutes from "./routes/slaPolicy.routes.js";
+import automationRuleRoutes from "./routes/automationRule.routes.js";
+import { startCronJobs } from "./services/cronJobs.service.js";
 
 dotenv.config();
 connectDB();
@@ -27,7 +30,7 @@ const io = new Server(server, {
   cors: { origin: process.env.CLIENT_URL || "*", credentials: true },
 });
 registerSocketHandlers(io);
-
+startCronJobs(io);
 
 app.use((req, res, next) => {
   req.io = io;
@@ -38,7 +41,6 @@ app.use(cors({ origin: process.env.CLIENT_URL || "*", credentials: true }));
 app.use(express.json());
 
 app.get("/api/health", (req, res) => res.json({ status: "ok", service: "FlowForge API" }));
-
 app.use("/api/auth", authRoutes);
 app.use("/api/organizations", organizationRoutes);
 app.use("/api/teams", teamRoutes);
@@ -47,6 +49,8 @@ app.use("/api/work-items", workItemRoutes);
 app.use("/api/workflows", workflowRoutes);
 app.use("/api/join-requests", joinRequestRoutes);
 app.use("/api/public", publicRoutes);
+app.use("/api/sla-policies", slaPolicyRoutes);
+app.use("/api/automation-rules", automationRuleRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
