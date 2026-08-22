@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Box, Button, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, MenuItem, Table, TableHead, TableRow, TableCell, TableBody, Chip,
+  TextField, MenuItem, Table, TableHead, TableRow, TableCell, TableBody, Chip, Alert,
 } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import Layout from "../components/Layout";
@@ -15,6 +15,8 @@ const Users = () => {
   const [teams, setTeams] = useState([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "requester", teamId: "" });
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const load = () => {
     api.get("/users").then(({ data }) => setUsers(data));
@@ -25,12 +27,25 @@ const Users = () => {
     load();
   }, []);
 
+  const handleClose = () => {
+    setOpen(false);
+    setError("");
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
-    await api.post("/users", { ...form, teamId: form.teamId || null });
-    setForm({ name: "", email: "", password: "", role: "requester", teamId: "" });
-    setOpen(false);
-    load();
+    setError("");
+    setSubmitting(true);
+    try {
+      await api.post("/users", { ...form, teamId: form.teamId || null });
+      setForm({ name: "", email: "", password: "", role: "requester", teamId: "" });
+      setOpen(false);
+      load();
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not add user");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -68,10 +83,12 @@ const Users = () => {
         </CardContent>
       </Card>
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
+      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
         <form onSubmit={handleCreate}>
           <DialogTitle>Add user</DialogTitle>
           <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+            {error && <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>}
+
             <TextField label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required fullWidth />
             <TextField
               label="Email"
@@ -88,6 +105,8 @@ const Users = () => {
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               required
               fullWidth
+              inputProps={{ minLength: 6 }}
+              helperText="At least 6 characters"
             />
             <TextField select label="Role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} fullWidth>
               {roles.map((r) => (
@@ -106,9 +125,9 @@ const Users = () => {
             </TextField>
           </DialogContent>
           <DialogActions sx={{ p: 2.5 }}>
-            <Button onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="contained">
-              Add
+            <Button onClick={handleClose}>Cancel</Button>
+            <Button type="submit" variant="contained" disabled={submitting}>
+              {submitting ? "Adding..." : "Add"}
             </Button>
           </DialogActions>
         </form>

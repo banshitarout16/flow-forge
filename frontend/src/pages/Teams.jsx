@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Button, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Typography, Grid, Chip } from "@mui/material";
+import { Box, Button, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Typography, Grid, Chip, Alert } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import Layout from "../components/Layout";
 import api from "../api/axios";
@@ -9,6 +9,8 @@ const Teams = () => {
   const [teams, setTeams] = useState([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", description: "" });
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const load = () => api.get("/teams").then(({ data }) => setTeams(data));
 
@@ -16,12 +18,25 @@ const Teams = () => {
     load();
   }, []);
 
+  const handleClose = () => {
+    setOpen(false);
+    setError("");
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
-    await api.post("/teams", form);
-    setForm({ name: "", description: "" });
-    setOpen(false);
-    load();
+    setError("");
+    setSubmitting(true);
+    try {
+      await api.post("/teams", form);
+      setForm({ name: "", description: "" });
+      setOpen(false);
+      load();
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not create team");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -55,10 +70,11 @@ const Teams = () => {
         )}
       </Grid>
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
+      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
         <form onSubmit={handleCreate}>
           <DialogTitle>New team</DialogTitle>
           <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+            {error && <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>}
             <TextField label="Team name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required fullWidth />
             <TextField
               label="Description"
@@ -70,9 +86,9 @@ const Teams = () => {
             />
           </DialogContent>
           <DialogActions sx={{ p: 2.5 }}>
-            <Button onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="contained">
-              Create
+            <Button onClick={handleClose}>Cancel</Button>
+            <Button type="submit" variant="contained" disabled={submitting}>
+              {submitting ? "Creating..." : "Create"}
             </Button>
           </DialogActions>
         </form>

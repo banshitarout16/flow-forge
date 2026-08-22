@@ -1,17 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Chip,
-  TextField,
-  Button,
-  MenuItem,
-  Divider,
-  Avatar,
-  Link as MLink,
+  Box, Card, CardContent, Typography, Chip, TextField, Button, MenuItem, Divider, Avatar, Link as MLink,
 } from "@mui/material";
 import AttachFileRoundedIcon from "@mui/icons-material/AttachFileRounded";
 import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
@@ -32,8 +22,7 @@ const WorkItemDetail = () => {
 
   const canAssign = user?.role === "org_admin" || user?.role === "manager";
 
-  const load = () =>
-    api.get(`/work-items/${id}`).then(({ data }) => setItem(data));
+  const load = () => api.get(`/work-items/${id}`).then(({ data }) => setItem(data));
 
   useEffect(() => {
     load();
@@ -88,46 +77,22 @@ const WorkItemDetail = () => {
     );
   }
 
-  const workflowStates = (item.workflowId?.states || [])
-    .slice()
-    .sort((a, b) => a.order - b.order);
+  const workflowStates = (item.workflowId?.states || []).slice().sort((a, b) => a.order - b.order);
 
   return (
     <Layout title={`${item.code} · ${item.title}`}>
       <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
-        <Box
-          sx={{
-            flex: 2,
-            minWidth: 340,
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-          }}
-        >
+        <Box sx={{ flex: 2, minWidth: 340, display: "flex", flexDirection: "column", gap: 2 }}>
           <Card>
             <CardContent>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                }}
-              >
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <Box>
                   <Typography variant="overline" sx={{ color: colors.slate }}>
-                    {item.code}
-                    {item.workflowId?.name ? ` · ${item.workflowId.name}` : ""}
+                    {item.code}{item.workflowId?.name ? ` · ${item.workflowId.name}` : ""}
                   </Typography>
                   <Typography variant="h5">{item.title}</Typography>
                 </Box>
-                <TextField
-                  select
-                  size="small"
-                  label="Status"
-                  value={item.status}
-                  onChange={handleStatusChange}
-                  sx={{ minWidth: 180 }}
-                >
+                <TextField select size="small" label="Status" value={item.status} onChange={handleStatusChange} sx={{ minWidth: 180 }}>
                   {workflowStates.map((s) => (
                     <MenuItem key={s.label} value={s.label}>
                       {s.label}
@@ -139,13 +104,30 @@ const WorkItemDetail = () => {
                 {item.description || "No description provided."}
               </Typography>
 
-              {item.reopenCount > 0 && (
-                <Chip
-                  size="small"
-                  label={`Reopened ${item.reopenCount}×`}
-                  sx={{ mt: 2, bgcolor: colors.redSoft, color: colors.red }}
-                />
-              )}
+              <Box sx={{ display: "flex", gap: 1, mt: 2, flexWrap: "wrap" }}>
+                {item.reopenCount > 0 && (
+                  <Chip size="small" label={`Reopened ${item.reopenCount}×`} sx={{ bgcolor: colors.redSoft, color: colors.red }} />
+                )}
+                {item.slaStatus && item.slaStatus !== "not_tracked" && (
+                  <Chip
+                    size="small"
+                    label={
+                      item.slaStatus === "breached"
+                        ? "SLA breached"
+                        : item.slaStatus === "at_risk"
+                        ? "SLA at risk"
+                        : `SLA due ${new Date(item.slaDeadline).toLocaleString()}`
+                    }
+                    sx={{
+                      bgcolor: item.slaStatus === "breached" ? colors.redSoft : item.slaStatus === "at_risk" ? "#FFF1DE" : "#E7F7EE",
+                      color: item.slaStatus === "breached" ? colors.red : item.slaStatus === "at_risk" ? "#C77700" : "#1E8E5A",
+                    }}
+                  />
+                )}
+                {item.escalated && (
+                  <Chip size="small" label="Auto-escalated" sx={{ bgcolor: "#E7F0FB", color: "#2B6CB0" }} />
+                )}
+              </Box>
             </CardContent>
           </Card>
 
@@ -157,24 +139,11 @@ const WorkItemDetail = () => {
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 {item.activityLog?.map((log, i) => (
                   <Box key={i} sx={{ display: "flex", gap: 1.5 }}>
-                    <Box
-                      sx={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        bgcolor: colors.red,
-                        mt: 0.7,
-                        flexShrink: 0,
-                      }}
-                    />
+                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: colors.red, mt: 0.7, flexShrink: 0 }} />
                     <Box>
                       <Typography variant="body2">{log.action}</Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ color: colors.slate }}
-                      >
-                        {log.performedBy?.name || "System"} ·{" "}
-                        {new Date(log.timestamp).toLocaleString()}
+                      <Typography variant="caption" sx={{ color: colors.slate }}>
+                        {log.performedBy?.name || "System"} · {new Date(log.timestamp).toLocaleString()}
                       </Typography>
                     </Box>
                   </Box>
@@ -185,14 +154,7 @@ const WorkItemDetail = () => {
 
           <Card>
             <CardContent>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  mb: 2,
-                }}
-              >
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Typography variant="h6">Attachments</Typography>
                 <Button
                   size="small"
@@ -202,30 +164,14 @@ const WorkItemDetail = () => {
                 >
                   {uploading ? "Uploading..." : "Add file"}
                 </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  hidden
-                  onChange={handleFileSelect}
-                />
+                <input ref={fileInputRef} type="file" hidden onChange={handleFileSelect} />
               </Box>
 
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                 {item.attachments?.map((a, i) => (
-                  <Box
-                    key={i}
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                  >
-                    <InsertDriveFileRoundedIcon
-                      fontSize="small"
-                      sx={{ color: colors.slate }}
-                    />
-                    <MLink
-                      href={a.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{ color: colors.red }}
-                    >
+                  <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <InsertDriveFileRoundedIcon fontSize="small" sx={{ color: colors.slate }} />
+                    <MLink href={a.url} target="_blank" rel="noopener noreferrer" sx={{ color: colors.red }}>
                       {a.filename || "Attachment"}
                     </MLink>
                     <Typography variant="caption" sx={{ color: colors.slate }}>
@@ -247,24 +193,15 @@ const WorkItemDetail = () => {
               <Typography variant="h6" sx={{ mb: 2 }}>
                 Comments
               </Typography>
-              <Box
-                sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2 }}
-              >
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2 }}>
                 {item.comments?.map((c, i) => (
                   <Box key={i} sx={{ display: "flex", gap: 1.5 }}>
-                    <Avatar
-                      sx={{
-                        width: 30,
-                        height: 30,
-                        fontSize: 13,
-                        bgcolor: colors.ink,
-                      }}
-                    >
+                    <Avatar sx={{ width: 30, height: 30, fontSize: 13, bgcolor: colors.ink }}>
                       {c.author?.name?.[0]?.toUpperCase() || "?"}
                     </Avatar>
                     <Box>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {c.author?.name || "Unknown"}
+                        {c.author?.name || "FlowForge"}
                       </Typography>
                       <Typography variant="body2">{c.text}</Typography>
                     </Box>
@@ -277,11 +214,7 @@ const WorkItemDetail = () => {
                 )}
               </Box>
               <Divider sx={{ mb: 2 }} />
-              <Box
-                component="form"
-                onSubmit={handleAddComment}
-                sx={{ display: "flex", gap: 1 }}
-              >
+              <Box component="form" onSubmit={handleAddComment} sx={{ display: "flex", gap: 1 }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -299,9 +232,7 @@ const WorkItemDetail = () => {
 
         <Box sx={{ flex: 1, minWidth: 260 }}>
           <Card>
-            <CardContent
-              sx={{ display: "flex", flexDirection: "column", gap: 2 }}
-            >
+            <CardContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Typography variant="h6">Details</Typography>
               <Box>
                 <Typography variant="caption" sx={{ color: colors.slate }}>
@@ -331,9 +262,7 @@ const WorkItemDetail = () => {
                     size="small"
                     fullWidth
                     value={item.assignedTeam?._id || ""}
-                    onChange={(e) =>
-                      handleAssignChange("assignedTeam", e.target.value)
-                    }
+                    onChange={(e) => handleAssignChange("assignedTeam", e.target.value)}
                   >
                     <MenuItem value="">Unassigned</MenuItem>
                     {teams.map((t) => (
@@ -343,9 +272,7 @@ const WorkItemDetail = () => {
                     ))}
                   </TextField>
                 ) : (
-                  <Typography variant="body2">
-                    {item.assignedTeam?.name || "Unassigned"}
-                  </Typography>
+                  <Typography variant="body2">{item.assignedTeam?.name || "Unassigned"}</Typography>
                 )}
               </Box>
               <Box>
@@ -358,9 +285,7 @@ const WorkItemDetail = () => {
                     size="small"
                     fullWidth
                     value={item.assignedTo?._id || ""}
-                    onChange={(e) =>
-                      handleAssignChange("assignedTo", e.target.value)
-                    }
+                    onChange={(e) => handleAssignChange("assignedTo", e.target.value)}
                   >
                     <MenuItem value="">Unassigned</MenuItem>
                     {users
@@ -372,18 +297,14 @@ const WorkItemDetail = () => {
                       ))}
                   </TextField>
                 ) : (
-                  <Typography variant="body2">
-                    {item.assignedTo?.name || "Unassigned"}
-                  </Typography>
+                  <Typography variant="body2">{item.assignedTo?.name || "Unassigned"}</Typography>
                 )}
               </Box>
               <Box>
                 <Typography variant="caption" sx={{ color: colors.slate }}>
                   Created
                 </Typography>
-                <Typography variant="body2">
-                  {new Date(item.createdAt).toLocaleString()}
-                </Typography>
+                <Typography variant="body2">{new Date(item.createdAt).toLocaleString()}</Typography>
               </Box>
             </CardContent>
           </Card>

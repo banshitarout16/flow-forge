@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import api from "../api/axios";
 import { colors } from "../theme/theme";
+import { useSocket } from "../context/SocketContext";
 
 const priorityColor = {
   Critical: { bg: colors.redSoft, fg: colors.red },
@@ -31,6 +32,7 @@ const WorkItems = () => {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const navigate = useNavigate();
+  const { socket } = useSocket() || {};
 
   const load = () => api.get("/work-items").then(({ data }) => setItems(data));
   const loadWorkflows = () =>
@@ -44,6 +46,19 @@ const WorkItems = () => {
     load();
     loadWorkflows();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+    const refresh = () => load();
+    socket.on("workItem:created", refresh);
+    socket.on("workItem:statusChanged", refresh);
+    socket.on("workItem:assigned", refresh);
+    return () => {
+      socket.off("workItem:created", refresh);
+      socket.off("workItem:statusChanged", refresh);
+      socket.off("workItem:assigned", refresh);
+    };
+  }, [socket]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -72,6 +87,7 @@ const WorkItems = () => {
                 <TableCell>Priority</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Assigned to</TableCell>
+                <TableCell>SLA</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -100,11 +116,23 @@ const WorkItems = () => {
                     />
                   </TableCell>
                   <TableCell>{item.assignedTo?.name || "—"}</TableCell>
+                  <TableCell>
+                    {item.slaStatus && item.slaStatus !== "not_tracked" && (
+                      <Chip
+                        size="small"
+                        label={item.slaStatus === "on_track" ? "On track" : item.slaStatus === "at_risk" ? "At risk" : "Breached"}
+                        sx={{
+                          bgcolor: item.slaStatus === "breached" ? colors.redSoft : item.slaStatus === "at_risk" ? "#FFF1DE" : "#E7F7EE",
+                          color: item.slaStatus === "breached" ? colors.red : item.slaStatus === "at_risk" ? "#C77700" : "#1E8E5A",
+                        }}
+                      />
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
               {items.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={7}>
                     <Typography variant="body2" sx={{ color: colors.slate, py: 3, textAlign: "center" }}>
                       No work items yet. Create your first one.
                     </Typography>

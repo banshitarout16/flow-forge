@@ -6,9 +6,12 @@ const Layout = ({ title, children }) => {
   return (
     <Box sx={{ display: "flex" }}>
       <Sidebar />
-      <Box component="main" sx={{ flexGrow: 1, minHeight: "100vh", bgcolor: "background.default" }}>
+      <Box
+        component="main"
+        sx={{ flexGrow: 1, minHeight: "100vh", bgcolor: "background.default" }}
+      >
         <Topbar title={title} />
-        <Toolbar /> {/* spacer for fixed AppBar */}
+        <Toolbar />
         <Box sx={{ p: 4 }}>{children}</Box>
       </Box>
     </Box>

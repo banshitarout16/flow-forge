@@ -6,6 +6,8 @@ import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
 import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
 import HowToRegRoundedIcon from "@mui/icons-material/HowToRegRounded";
 import AccountTreeRoundedIcon from "@mui/icons-material/AccountTreeRounded";
+import TimerRoundedIcon from "@mui/icons-material/TimerRounded";
+import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import { colors } from "../theme/theme";
 import { useAuth } from "../context/AuthContext";
 
@@ -20,6 +22,8 @@ const baseNavItems = [
 
 const adminOnlyItems = [
   { label: "Workflows", path: "/workflows", icon: <AccountTreeRoundedIcon /> },
+  { label: "SLA Policies", path: "/sla-policies", icon: <TimerRoundedIcon /> },
+  { label: "Automation Rules", path: "/automation-rules", icon: <BoltRoundedIcon /> },
   { label: "Applications", path: "/applications", icon: <HowToRegRoundedIcon /> },
 ];
 

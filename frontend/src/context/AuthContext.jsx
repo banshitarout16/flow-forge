@@ -14,8 +14,9 @@ export const AuthProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(false);
 
-  const persistSession = ({ user, organization, accessToken }) => {
+  const persistSession = ({ user, organization, accessToken, refreshToken }) => {
     localStorage.setItem("flowforge_access_token", accessToken);
+    localStorage.setItem("flowforge_refresh_token", refreshToken);
     localStorage.setItem("flowforge_user", JSON.stringify(user));
     localStorage.setItem("flowforge_org", JSON.stringify(organization));
     setUser(user);
@@ -59,6 +60,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem("flowforge_access_token");
+    localStorage.removeItem("flowforge_refresh_token");
     localStorage.removeItem("flowforge_user");
     localStorage.removeItem("flowforge_org");
     setUser(null);
